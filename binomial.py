@@ -10,3 +10,7 @@ dt = 1 / 50
 # Model Parameters
 u = np.exp(sigma * np.sqrt(dt))
 d = np.exp(-sigma * np.sqrt(dt))
+
+class Node:
+	def __init__(self, stockprice, layer, children):
+		
