@@ -5,6 +5,7 @@ class Tree:
 	def __init__(self, depth, K, S0, r, sigma, T=1):
 		self.depth = depth
 		self.layers = []
+		self.T = T
 		self.dt = T / (depth - 1)
 		self.u = np.exp(sigma * np.sqrt(dt))
 		self.d = np.exp(-sigma * np.sqrt(dt))
@@ -38,17 +39,19 @@ class Tree:
 		for layer in self.layers[::-1]:
 			for node in layer:
 				node.option_pricer(K, r, self.p, self.dt)
+				node.analytical_pricer(K, r, sigma, self.dt, self.T, self.depth)
 
 class Node:
 	def __init__(self, layer, index):
 		self.stock_price = 0
 		self.option_price = 0
+		self.analytical_price = 0
 		self.layer = layer
 		self.index = index
 		self.children = []
 
 	def __str__(self):
-		return f"Layer: {self.layer}, #{self.index+1}, S: {self.stock_price}, f: {self.option_price}"
+		return f"Layer: {self.layer}, #{self.index+1}, S: {self.stock_price}, f: {self.option_price}, analytic: {self.analytical_price}"
 
 	def stock_pricer(self, u, d):
 		if len(self.children) == 2:
@@ -62,9 +65,17 @@ class Node:
 			up = self.children[0].option_price
 			down = self.children[1].option_price
 			self.option_price = (p * up + (1 - p) * down) * np.exp(-r * dt)
-			print(f"a={np.exp(r * dt)}, dt={dt}")
 		else:
-			self.option_price = max(K - self.stock_price, 0)
+			self.option_price = max(self.stock_price - K, 0)
+
+	def analytical_pricer(self, K, r, sigma, dt, T, depth):
+		if self.layer == depth:
+			self.analytical_price = max(self.stock_price - K, 0)
+		else:
+			t = (self.layer - 1) * dt
+			d1 = 1/(sigma*np.sqrt(T-t)) * (np.log(self.stock_price/K) + (r+((sigma**2)/2))*(T-t))
+			d2 = d1 - (sigma*np.sqrt(T-t))
+			self.analytical_price = norm.cdf(d1)*self.stock_price - norm.cdf(d2)*K*np.exp(-r*(T-t))
 
 	def hedge(self):
 		if len(self.children) == 0:
@@ -79,14 +90,6 @@ class Node:
 			else:
 				return (df / ds)
 
-def analytical(St, K, sigma, r, t, T):
-
-	d1 = 1/(sigma*np.sqrt(T-t)) * (np.log(St/K) + (r+((sigma**2)/2))*(T-t))
-	d2 = d1 - (sigma*np.sqrt(T-t))
-	ct = norm.cdf(d1)*St - norm.cdf(d2)*K*np.exp(-r*(T-t))
-
-	return ct
-
 # Input variables
 K = 50
 S0 = 50
@@ -99,6 +102,3 @@ for layer in tree.layers:
 	for node in layer:
 		print(node)
 		print(f"Hedge parameter: {node.hedge()}")
-
-
-print(analytical(50, K, sigma, r, 4/12, 5/12))
