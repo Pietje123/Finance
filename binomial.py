@@ -10,11 +10,12 @@ class Tree:
 		self.u = np.exp(sigma * np.sqrt(dt))
 		self.d = np.exp(-sigma * np.sqrt(dt))
 		self.p = (np.exp(r * dt) - self.d) / (self.u - self.d)
+		self.usa = american
 
 		self.create(self.dt)
 		self.assign_children()
 		self.price_stocks(S0)
-		self.price_options(K, r)
+		self.price_options(K, r, self.usa)
 
 	def create(self, dt):
 		for row in range(1, self.depth + 1):
@@ -35,7 +36,7 @@ class Tree:
 			for node in layer:
 				node.stock_pricer(self.u, self.d)
 
-	def price_options(self, K, r):
+	def price_options(self, K, r, american):
 		for layer in self.layers[::-1]:
 			for node in layer:
 				node.option_pricer(K, r, self.p, self.dt)
