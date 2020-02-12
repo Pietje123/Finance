@@ -2,7 +2,7 @@ import numpy as np
 from scipy.stats import norm
 
 class Tree:
-	def __init__(self, depth, K, S0, r, sigma, T=1):
+	def __init__(self, depth, K, S0, r, sigma, T=1, american=False):
 		self.depth = depth
 		self.layers = []
 		self.dt = T / (depth - 1)
@@ -38,7 +38,8 @@ class Tree:
 		for layer in self.layers[::-1]:
 			for node in layer:
 				node.option_pricer(K, r, self.p, self.dt)
-
+				if american:
+					node.option_price = max(K - node.stock_price, node.option_price)
 class Node:
 	def __init__(self, layer, index):
 		self.stock_price = 0
@@ -94,11 +95,11 @@ r = 0.10
 sigma = 0.40
 dt = 0.0833
 
-tree = Tree(6, K, S0, r, sigma, 5/12)
-for layer in tree.layers:
-	for node in layer:
-		print(node)
-		print(f"Hedge parameter: {node.hedge()}")
+# tree = Tree(6, K, S0, r, sigma, 5/12)
+# for layer in tree.layers:
+# 	for node in layer:	
+# 		print(node)
+# 		print(f"Hedge parameter: {node.hedge()}")
 
 
 print(analytical(50, K, sigma, r, 4/12, 5/12))
