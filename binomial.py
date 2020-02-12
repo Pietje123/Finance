@@ -2,7 +2,7 @@ import numpy as np
 from scipy.stats import norm
 
 class Tree:
-	def __init__(self, depth, K, S0, r, sigma, T=1):
+	def __init__(self, depth, K, S0, r, sigma, T=1, american=False):
 		self.depth = depth
 		self.layers = []
 		self.T = T
@@ -40,7 +40,8 @@ class Tree:
 			for node in layer:
 				node.option_pricer(K, r, self.p, self.dt)
 				node.analytical_pricer(K, r, sigma, self.dt, self.T, self.depth)
-
+				if american:
+					node.option_price = max(K - node.stock_price, node.option_price)
 class Node:
 	def __init__(self, layer, index):
 		self.stock_price = 0
