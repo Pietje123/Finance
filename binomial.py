@@ -1,26 +1,20 @@
 import numpy as np
 
-# Input variables
-K = 50
-S0 = 50
-r = 0.10
-sigma = 0.40
-dt = 0.0833
-
-# Model Parameters
-u = np.exp(sigma * np.sqrt(dt))
-d = np.exp(-sigma * np.sqrt(dt))
-
 class Tree:
-	def __init__(self, depth):
+	def __init__(self, depth, K, S0, r, sigma):
 		self.depth = depth
 		self.layers = []
-		self.create()
+		self.dt = 1 / depth
+		self.u = np.exp(sigma * np.sqrt(dt))
+		self.d = np.exp(-sigma * np.sqrt(dt))
+		self.p = (np.exp(r * dt) - self.d) / (self.u - self.d)
+
+		self.create(self.dt)
 		self.assign_children()
 		self.price_stocks(S0)
 		self.price_options(K, r)
 
-	def create(self):
+	def create(self, dt):
 		for row in range(1, self.depth + 1):
 			layer = []
 			for i in range(row):
@@ -37,12 +31,12 @@ class Tree:
 
 		for layer in self.layers[:-1]:
 			for node in layer:
-				node.stock_pricer()
+				node.stock_pricer(self.u, self.d)
 
 	def price_options(self, K, r):
 		for layer in self.layers[::-1]:
 			for node in layer:
-				node.option_pricer(K, r)
+				node.option_pricer(K, r, self.p, self.dt)
 
 class Node:
 	def __init__(self, layer, index):
@@ -55,18 +49,17 @@ class Node:
 	def __str__(self):
 		return f"Layer: {self.layer}, #{self.index+1}, S: {self.stock_price}, f: {self.option_price}"
 
-	def stock_pricer(self):
+	def stock_pricer(self, u, d):
 		if len(self.children) == 2:
 			if self.children[0].stock_price == 0:
 				self.children[0].stock_price = u * self.stock_price
 			if self.children[1].stock_price == 0:
 				self.children[1].stock_price = d * self.stock_price
 
-	def option_pricer(self, K, r):
+	def option_pricer(self, K, r, p, dt):
 		if len(self.children) == 2:
 			up = self.children[0].option_price
 			down = self.children[1].option_price
-			p = (np.exp(r * dt) - d) / (u - d)
 			self.option_price = (p * up + (1 - p) * down) * np.exp(-r * dt)
 		else:
 			self.option_price = max(K - self.stock_price, 0)
@@ -84,7 +77,14 @@ class Node:
 			else:
 				return (df / ds)
 
-tree = Tree(6)
+# Input variables
+K = 50
+S0 = 50
+r = 0.10
+sigma = 0.40
+dt = 0.0833
+
+tree = Tree(6, K, S0, r, sigma)
 for layer in tree.layers:
 	for node in layer:
 		print(node)
