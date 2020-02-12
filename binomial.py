@@ -2,20 +2,19 @@ import numpy as np
 from scipy.stats import norm
 
 class Tree:
-	def __init__(self, depth, K, S0, r, sigma, T=1, american=False):
+	def __init__(self, depth, K, S0, r, sigma, T=1, call=True, american=False):
 		self.depth = depth
 		self.layers = []
 		self.T = T
 		self.dt = T / (depth - 1)
-		self.u = np.exp(sigma * np.sqrt(dt))
-		self.d = np.exp(-sigma * np.sqrt(dt))
-		self.p = (np.exp(r * dt) - self.d) / (self.u - self.d)
-		self.usa = american
+		self.u = np.exp(sigma * np.sqrt(self.dt))
+		self.d = np.exp(-sigma * np.sqrt(self.dt))
+		self.p = (np.exp(r * self.dt) - self.d) / (self.u - self.d)
 
 		self.create(self.dt)
 		self.assign_children()
 		self.price_stocks(S0)
-		self.price_options(K, r, self.usa)
+		self.price_options(K, r, call, american)
 
 	def create(self, dt):
 		for row in range(1, self.depth + 1):
@@ -36,13 +35,25 @@ class Tree:
 			for node in layer:
 				node.stock_pricer(self.u, self.d)
 
-	def price_options(self, K, r, american):
+	def price_options(self, K, r, call, american):
 		for layer in self.layers[::-1]:
 			for node in layer:
-				node.option_pricer(K, r, self.p, self.dt)
-				node.analytical_pricer(K, r, sigma, self.dt, self.T, self.depth)
+				node.option_pricer(K, r, self.p, self.dt, call)
+				node.analytical_pricer(K, r, sigma, self.dt, self.T, self.depth, call)
 				if american:
-					node.option_price = max(K - node.stock_price, node.option_price)
+					if call:
+						print(node.option_price - max(node.stock_price - K, node.option_price))
+						node.option_price = max(node.stock_price - K, node.option_price)
+					else:
+						print(node.option_price - max(K - node.stock_price, node.option_price))
+						node.option_price = max(K -node.stock_price, node.option_price)
+
+	def root_option_diff(self):
+		return self.layers[0][0].option_price - self.layers[0][0].analytical_price
+
+	def root_hedge_diff(self):
+		pass
+
 class Node:
 	def __init__(self, layer, index):
 		self.stock_price = 0
@@ -62,22 +73,31 @@ class Node:
 			if self.children[1].stock_price == 0:
 				self.children[1].stock_price = d * self.stock_price
 
-	def option_pricer(self, K, r, p, dt):
+	def option_pricer(self, K, r, p, dt, call):
 		if len(self.children) == 2:
 			up = self.children[0].option_price
 			down = self.children[1].option_price
 			self.option_price = (p * up + (1 - p) * down) * np.exp(-r * dt)
 		else:
-			self.option_price = max(self.stock_price - K, 0)
+			if call:
+				self.option_price = max(self.stock_price - K, 0)
+			else:
+				self.option_price = max(K - self.stock_price, 0)
 
-	def analytical_pricer(self, K, r, sigma, dt, T, depth):
+	def analytical_pricer(self, K, r, sigma, dt, T, depth, call):
 		if self.layer == depth:
-			self.analytical_price = max(self.stock_price - K, 0)
+			if call:
+				self.analytical_price = max(self.stock_price - K, 0)
+			else:
+				self.analytical_price = max(K - self.stock_price, 0)
 		else:
 			t = (self.layer - 1) * dt
 			d1 = 1/(sigma*np.sqrt(T-t)) * (np.log(self.stock_price/K) + (r+((sigma**2)/2))*(T-t))
 			d2 = d1 - (sigma*np.sqrt(T-t))
-			self.analytical_price = norm.cdf(d1)*self.stock_price - norm.cdf(d2)*K*np.exp(-r*(T-t))
+			if call:
+				self.analytical_price = norm.cdf(d1)*self.stock_price - norm.cdf(d2)*K*np.exp(-r*(T-t))
+			else:
+				self.analytical_price = -norm.cdf(-d1)*self.stock_price + norm.cdf(-d2)*K*np.exp(-r*(T-t))
 
 	def hedge(self):
 		if len(self.children) == 0:
@@ -97,10 +117,7 @@ K = 50
 S0 = 50
 r = 0.10
 sigma = 0.40
-dt = 0.0833
 
-tree = Tree(6, K, S0, r, sigma, 5/12)
-for layer in tree.layers:
-	for node in layer:
-		print(node)
-		print(f"Hedge parameter: {node.hedge()}")
+for i in range(2, 50):
+	tree = Tree(i, K, S0, r, sigma, T=5/12, call=False, american=False)
+	print(tree.root_option_diff())
