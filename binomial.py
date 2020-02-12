@@ -44,10 +44,8 @@ class Tree:
                 node.analytical_pricer(K, r, self.sigma, self.dt, self.T, self.depth, call)
                 if american:
                     if call:
-                        print(node.option_price - max(node.stock_price - K, node.option_price))
                         node.option_price = max(node.stock_price - K, node.option_price)
                     else:
-                        print(node.option_price - max(K - node.stock_price, node.option_price))
                         node.option_price = max(K -node.stock_price, node.option_price)
 
     def root_option_diff(self):
