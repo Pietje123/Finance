@@ -1,5 +1,6 @@
 import numpy as np
 from scipy.stats import norm
+import matplotlib.pyplot as plt
 
 class Tree:
 	def __init__(self, depth, K, S0, r, sigma, T=1, call=True, american=False):
@@ -118,6 +119,17 @@ S0 = 50
 r = 0.10
 sigma = 0.40
 
-for i in range(2, 50):
-	tree = Tree(i, K, S0, r, sigma, T=5/12, call=False, american=False)
-	print(tree.root_option_diff())
+rcs = []
+sigmas = np.arange(0.1, 0.5, 0.02)
+for sigma in sigmas:
+	diff = []
+	for i in range(4, 50, 2):
+		print(i)
+		tree = Tree(i, K, S0, r, sigma, T=0.1, call=False, american=False)
+		diff.append(1 / tree.root_option_diff())
+	# plt.plot(range(4, 150, 2), diff, label=f"sigma={sigma}")
+	rcs.append(1/((-diff[0] + diff[-1])/(44)))
+
+plt.plot(sigmas, rcs)
+plt.legend()
+plt.show()
