@@ -8,6 +8,9 @@ class Tree:
         self.layers = []
         self.T = T
         self.sigma = sigma
+        self.S0 = S0
+        self.r = r
+        self.K = K
         self.dt = T / (depth - 1)
         self.u = np.exp(self.sigma * np.sqrt(self.dt))
         self.d = np.exp(-self.sigma * np.sqrt(self.dt))
@@ -46,13 +49,15 @@ class Tree:
                     if call:
                         node.option_price = max(node.stock_price - K, node.option_price)
                     else:
-                        node.option_price = max(K -node.stock_price, node.option_price)
+                        node.option_price = max(K - node.stock_price, node.option_price)
 
     def root_option_diff(self):
         return self.layers[0][0].option_price - self.layers[0][0].analytical_price
 
     def root_hedge_diff(self):
-        pass
+        analytical_hedge = norm.cdf(1 / (self.sigma * np.sqrt(self.T)) * (np.log(self.S0 / self.K) + (self.r + ((self.sigma ** 2) / 2)) * (self.T)))
+        binom_hedge = (self.layers[1][0].option_price - self.layers[1][0].option_price) / (self.S0 * (self.u - self.d))
+        return binom_hedge - analytical_hedge
 
 
 class Node:
