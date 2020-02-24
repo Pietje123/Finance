@@ -45,15 +45,4 @@ class Path:
         else:
             self.profit += self.hedge * self.stock_price
 
-
-profits = []
-prices = []
-for i in range(20):
-    path = Path(100, 0.2, 0.2, 0.06, 1, 99, 365, 1)
-    path.run()
-    profits.append(path.profit)
-    prices.append(path.stock_price)
-
-print(np.mean(profits))
-print(np.std(profits))
-print(list(zip(profits, prices)))
+        return self.profit
