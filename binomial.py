@@ -1,6 +1,5 @@
 import numpy as np
 from scipy.stats import norm
-import matplotlib.pyplot as plt
 
 
 class Tree:
@@ -57,85 +56,6 @@ class Tree:
 
 
 class Node:
-<<<<<<< HEAD
-	def __init__(self, layer, index):
-		self.stock_price = 0
-		self.option_price = 0
-		self.analytical_price = 0
-		self.layer = layer
-		self.index = index
-		self.children = []
-
-	def __str__(self):
-		return f"Layer: {self.layer}, #{self.index+1}, S: {self.stock_price}, f: {self.option_price}, analytic: {self.analytical_price}"
-
-	def stock_pricer(self, u, d):
-		if len(self.children) == 2:
-			if self.children[0].stock_price == 0:
-				self.children[0].stock_price = u * self.stock_price
-			if self.children[1].stock_price == 0:
-				self.children[1].stock_price = d * self.stock_price
-
-	def option_pricer(self, K, r, p, dt, call):
-		if len(self.children) == 2:
-			up = self.children[0].option_price
-			down = self.children[1].option_price
-			self.option_price = (p * up + (1 - p) * down) * np.exp(-r * dt)
-		else:
-			if call:
-				self.option_price = max(self.stock_price - K, 0)
-			else:
-				self.option_price = max(K - self.stock_price, 0)
-
-	def analytical_pricer(self, K, r, sigma, dt, T, depth, call):
-		if self.layer == depth:
-			if call:
-				self.analytical_price = max(self.stock_price - K, 0)
-			else:
-				self.analytical_price = max(K - self.stock_price, 0)
-		else:
-			t = (self.layer - 1) * dt
-			d1 = 1/(sigma*np.sqrt(T-t)) * (np.log(self.stock_price/K) + (r+((sigma**2)/2))*(T-t))
-			d2 = d1 - (sigma*np.sqrt(T-t))
-			if call:
-				self.analytical_price = norm.cdf(d1)*self.stock_price - norm.cdf(d2)*K*np.exp(-r*(T-t))
-			else:
-				self.analytical_price = -norm.cdf(-d1)*self.stock_price + norm.cdf(-d2)*K*np.exp(-r*(T-t))
-
-	def hedge(self):
-		if len(self.children) == 0:
-			print("Hedging not possible for option at expiry date.")
-		else:
-			df = self.children[0].option_price - self.children[1].option_price
-			ds = self.children[0].stock_price - self.children[1].stock_price
-			if ds == 0:
-				print("Stock prices have not yet been set.")
-			elif df == 0:
-				print("Hedging not possible as option has no value.")
-			else:
-				return (df / ds)
-
-# Input variables
-K = 50
-S0 = 50
-r = 0.10
-sigma = 0.40
-
-rcs = []
-sigmas = np.arange(0.1, 0.5, 0.02)
-for sigma in sigmas:
-	diff = []
-	for i in range(4, 50, 2):
-		print(i)
-		tree = Tree(i, K, S0, r, sigma, T=0.1, call=False, american=False)
-		diff.append(1 / tree.root_option_diff())
-	# plt.plot(range(4, 150, 2), diff, label=f"sigma={sigma}")
-	rcs.append(1/((-diff[0] + diff[-1])/(44)))
-
-plt.plot(sigmas, rcs)
-plt.legend()
-plt.show()
-=======
     def __init__(self, layer, index):
         self.stock_price = 0
         self.option_price = 0
@@ -192,4 +112,3 @@ plt.show()
                 print("Hedging not possible as option has no value.")
             else:
                 return (df / ds)
->>>>>>> ce7e70450f917c88c1b441949652920f2496cd20
