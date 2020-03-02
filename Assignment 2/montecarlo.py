@@ -4,7 +4,7 @@ import numpy as np
 
 
 class MonteCarlo:
-    def __init__(self, starting_price, r, T, K, steps, stock_sigma, call=True, digital=False, seed=None):
+    def __init__(self, starting_price, r, T, K, steps, stock_sigma, call=False, digital=False):
         self.starting_price = starting_price
         self.stock_sigma = stock_sigma
         self.r = r
@@ -15,13 +15,12 @@ class MonteCarlo:
         self.t = 0
         self.call = call
         self.digital = digital
-        self.seed = seed
 
-    def run(self, trials=1):
+    def run(self, trials=1, seed=None):
         stock_prices = np.array([self.starting_price] * trials, dtype=np.float64)
 
+        np.random.seed(seed)
         for step in range(self.steps):
-            np.random.seed(self.seed)
             epsilons = np.random.normal(size=trials)
             stock_prices += stock_prices * (self.r * self.dt + self.stock_sigma * epsilons * self.dt ** 0.5)
 
