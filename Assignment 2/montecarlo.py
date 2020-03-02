@@ -2,9 +2,10 @@ import numpy as np
 from scipy.stats import norm
 import numpy as np
 
-class Path:
-    def __init__(self, starting_price, r, T, K, steps, stock_sigma):
-        self.stock_price = starting_price
+
+class MonteCarlo:
+    def __init__(self, starting_price, r, T, K, steps, stock_sigma, call=True, digital=False, seed=None):
+        self.starting_price = starting_price
         self.stock_sigma = stock_sigma
         self.r = r
         self.T = T
@@ -12,22 +13,17 @@ class Path:
         self.steps = steps
         self.dt = T/steps
         self.t = 0
+        self.call = call
+        self.digital = digital
+        self.seed = seed
 
-    def update_price(self):
-        epsilon = np.random.normal()
-        self.stock_price += self.stock_price * (self.r * self.dt + self.stock_sigma * epsilon * self.dt ** 0.5)
+    def run(self, trials=1):
+        stock_prices = np.array([self.starting_price] * trials, dtype=np.float64)
 
-    def run(self):
         for step in range(self.steps):
-            self.update_price()
+            np.random.seed(self.seed)
+            epsilons = np.random.normal(size=trials)
+            stock_prices += stock_prices * (self.r * self.dt + self.stock_sigma * epsilons * self.dt ** 0.5)
 
-
-        return self.stock_price - self.K if self.stock_price > self.K else 0
-b = []
-
-for _ in range(1000):
-    a = Path(100, 0.06, 1, 99, 1000, 0.2)
-    b.append(a.run())
-
-print(np.mean(b))
-print(np.std(b)/np.sqrt(len(b)))
+        payoffs = np.clip((stock_prices - self.K) * (1 if self.call else -1), 0, (1 if self.digital else None))
+        return payoffs * np.exp(-self.r * self.T)
