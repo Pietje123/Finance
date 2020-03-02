@@ -24,5 +24,9 @@ class MonteCarlo:
             epsilons = np.random.normal(size=trials)
             stock_prices += stock_prices * (self.r * self.dt + self.stock_sigma * epsilons * self.dt ** 0.5)
 
-        payoffs = np.clip((stock_prices - self.K) * (1 if self.call else -1), 0, (1 if self.digital else None))
+        payoffs = np.clip((stock_prices - self.K) * (1 if self.call else -1), a_min=0)
+
+        if self.digital:
+            payoffs = np.ceil(np.clip(payoffs, a_max=1))
+
         return payoffs * np.exp(-self.r * self.T)
