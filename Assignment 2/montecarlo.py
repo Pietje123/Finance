@@ -30,3 +30,17 @@ class MonteCarlo:
             payoffs = np.ceil(np.clip(payoffs, a_max=1))
 
         return payoffs * np.exp(-self.r * self.T)
+
+    def run_immediately(self, trials=1, seed=None):
+        stock_prices = np.array([self.starting_price] * trials, dtype=np.float64)
+
+        np.random.seed(seed)
+        epsilons = np.random.normal(size=trials)
+        stock_prices *= np.exp((self.r - 0.5 * self.stock_sigma**2) * self.T + self.stock_sigma * self.T**0.5 * epsilons)
+
+        payoffs = np.clip((stock_prices - self.K) * (1 if self.call else -1), a_min=0)
+
+        if self.digital:
+            payoffs = np.ceil(np.clip(payoffs, a_max=1))
+
+        return payoffs * np.exp(-self.r * self.T)
