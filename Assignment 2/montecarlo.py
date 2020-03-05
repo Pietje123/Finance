@@ -1,9 +1,10 @@
 import numpy as np
 from scipy.stats import norm
-    
-class Path:
-    def __init__(self, starting_price, r, T, K, steps, stock_sigma):
-        self.stock_price = starting_price
+
+
+class MonteCarlo:
+    def __init__(self, starting_price, r, T, K, steps, stock_sigma, call=False, digital=False):
+        self.starting_price = starting_price
         self.stock_sigma = stock_sigma
         self.r = r
         self.T = T
@@ -11,14 +12,34 @@ class Path:
         self.steps = steps
         self.dt = T/steps
         self.t = 0
+        self.call = call
+        self.digital = digital
 
-    def update_price(self):
-        epsilon = np.random.normal()
-        self.stock_price += self.stock_price * (self.r * self.dt + self.stock_sigma * epsilon * self.dt ** 0.5)
+    def run(self, trials=1, seed=None):
+        stock_prices = np.array([self.starting_price] * trials, dtype=np.float64)
 
-    def run(self):
+        np.random.seed(seed)
         for step in range(self.steps):
-            self.update_price()
+            epsilons = np.random.normal(size=trials)
+            stock_prices += stock_prices * (self.r * self.dt + self.stock_sigma * epsilons * self.dt ** 0.5)
 
+        payoffs = np.clip((stock_prices - self.K) * (1 if self.call else -1), a_min=0)
 
-        return self.stock_price - self.K if self.stock_price > self.K else 0
+        if self.digital:
+            payoffs = np.ceil(np.clip(payoffs, a_max=1))
+
+        return payoffs * np.exp(-self.r * self.T)
+
+    def run_immediately(self, trials=1, seed=None):
+        stock_prices = np.array([self.starting_price] * trials, dtype=np.float64)
+
+        np.random.seed(seed)
+        epsilons = np.random.normal(size=trials)
+        stock_prices *= np.exp((self.r - 0.5 * self.stock_sigma**2) * self.T + self.stock_sigma * self.T**0.5 * epsilons)
+
+        payoffs = np.clip((stock_prices - self.K) * (1 if self.call else -1), a_min=0)
+
+        if self.digital:
+            payoffs = np.ceil(np.clip(payoffs, a_max=1))
+
+        return payoffs * np.exp(-self.r * self.T)
