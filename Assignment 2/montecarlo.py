@@ -1,7 +1,6 @@
 import numpy as np
 from scipy.stats import norm
-import numpy as np
-
+    
 class Path:
     def __init__(self, starting_price, r, T, K, steps, stock_sigma):
         self.stock_price = starting_price
@@ -23,11 +22,3 @@ class Path:
 
 
         return self.stock_price - self.K if self.stock_price > self.K else 0
-b = []
-
-for _ in range(1000):
-    a = Path(100, 0.06, 1, 99, 1000, 0.2)
-    b.append(a.run())
-
-print(np.mean(b))
-print(np.std(b)/np.sqrt(len(b)))
