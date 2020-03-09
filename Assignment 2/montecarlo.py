@@ -23,10 +23,10 @@ class MonteCarlo:
             epsilons = np.random.normal(size=trials)
             stock_prices += stock_prices * (self.r * self.dt + self.stock_sigma * epsilons * self.dt ** 0.5)
 
-        payoffs = np.clip((stock_prices - self.K) * (1 if self.call else -1), a_min=0)
+        payoffs = np.clip((stock_prices - self.K) * (1 if self.call else -1), a_min=0, a_max=None)
 
         if self.digital:
-            payoffs = np.ceil(np.clip(payoffs, a_max=1))
+            payoffs = np.ceil(np.clip(payoffs, a_min=None, a_max=1))
 
         return payoffs * np.exp(-self.r * self.T)
 
@@ -37,9 +37,9 @@ class MonteCarlo:
         epsilons = np.random.normal(size=trials)
         stock_prices *= np.exp((self.r - 0.5 * self.stock_sigma**2) * self.T + self.stock_sigma * self.T**0.5 * epsilons)
 
-        payoffs = np.clip((stock_prices - self.K) * (1 if self.call else -1), a_min=0)
+        payoffs = np.clip((stock_prices - self.K) * (1 if self.call else -1), a_min=0, a_max=None)
 
         if self.digital:
-            payoffs = np.ceil(np.clip(payoffs, a_max=1))
+            payoffs = np.ceil(np.clip(payoffs, a_min=None, a_max=1))
 
         return payoffs * np.exp(-self.r * self.T)
